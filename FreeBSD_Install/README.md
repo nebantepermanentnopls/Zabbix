@@ -158,4 +158,40 @@ service zabbix_agentd start
 ### Дальше подключаемся к нашему серверу через браузер по указанным в nginx порам и ip.
 
 
+## Настройка ротации логов для nginx, php-fpm:
+
+Редактируем файл ```/etc/newsyslog.conf```:
+
+```
+/var/log/nginx/*.log                    644  5     5000 *     GJ    /var/run/nginx.pid   30
+/var/log/php-fpm.log                    644  5     5000 *     GJ    /var/run/php-fpm.pid 30
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
