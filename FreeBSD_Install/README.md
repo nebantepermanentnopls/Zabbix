@@ -158,7 +158,9 @@ service zabbix_agentd start
 ### Дальше подключаемся к нашему серверу через браузер по указанным в nginx порам и ip.
 
 
-## Настройка ротации логов для nginx, php-fpm:
+## Настройка ротации логов:
+
+### nginx, php-fpm
 
 Редактируем файл ```/etc/newsyslog.conf```:
 
@@ -167,6 +169,54 @@ service zabbix_agentd start
 /var/log/php-fpm.log                    644  5     5000 *     GJ    /var/run/php-fpm.pid 30
 ```
 
+Запускаем newsyslog
+
+```
+
+```
+
+### mysql
+
+Создаем директорию для логов, выдаем права:
+
+```
+mkdir /var/log/mysql/
+chown -R mysql:mysql /var/log/mysql/
+```
+
+Редактируем ```/usr/local/etc/mysql/my.cnf```, добавляем и редактируем строки:
+
+```
+# Редактируем
+log-bin                         = /var/log/mysql/mysql-bin
+log-output                      = FILE
+
+# Добавляем
+log_error                       = /var/log/mysql/error.log
+
+general_log                     = 1
+general_log_file                = /var/log/mysql/general.log
+
+slow-query-log                  = 1
+slow-query-log_file             = /var/log/mysql/slow.log
+
+```
+
+
+Редактируем ```/etc/newsyslog.conf```, бинарные логи не трогаем, так как mysql сам очищает и перезаписывает их при достижении ими определенного размера:
+
+```
+/var/log/mysql/error.log   mysql:mysql  644  5    5000    *     GJ    /var/db/mysql/<hostname>.pid
+/var/log/mysql/general.log mysql:mysql  644  5    5000    *     GJ    /var/db/mysql/<hostname>.pid
+/var/log/mysql/slow.log    mysql:mysql  644  5    5000    *     GJ    /var/db/mysql/<hostname>.pid
+```
+
+Перезапускаем mysql, запускаем newsyslog:
+
+```
+service mysql-server restart
+newsyslog
+```
 
 
 
