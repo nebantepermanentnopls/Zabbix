@@ -1,0 +1,45 @@
+---
+- name: Install Zabbix-Server
+  hosts: zabbix-servers
+ 
+  tasks:
+
+  - name: Install packages 
+    pkgng:
+      name:
+      - nginx-1.18.0_49,2
+      - mysql57-server-5.7.33
+      - zabbix52-server-5.2.5 
+      - zabbix52-frontend-5.2.5
+      - zabbix52-agent-5.2.5
+      - py37-pymysql-0.10.1
+      state: present
+     
+  - name: Start and enable services
+    service:
+      name: "{{ item }}"
+      enabled: yes
+      state: started
+    with_items: 
+      - "php-fpm"
+      - "nginx"
+      - "mysql-server"
+#     - "zabbix_server"
+#     - "zabbix_agentd"
+
+  - name: Get first db pass
+    shell: 
+      cmd: cat .mysql_secret | tail -n 1
+    register: secret
+ 
+  - debug: 
+      var: secret 
+  
+  - name: Set mysql root password
+    mysql_user:
+      login_user: root
+      login_password: 
+      name: 'root' 
+      password: 'password'
+      state: present
+
