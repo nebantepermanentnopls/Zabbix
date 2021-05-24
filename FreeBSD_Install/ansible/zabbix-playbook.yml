@@ -27,19 +27,88 @@
 #     - "zabbix_server"
 #     - "zabbix_agentd"
 
+  - name: Check my.cnf
+    stat:
+      path: /root/.my.cnf
+    register: check_my
+
+  - name: Reset root password with .my.cnf
+    mysql_user:
+      name: root
+      password: "{{ mysql_root_password }}"
+      config_file: ~/.my.cnf
+    when: check_my.stat.exists==True
+ 
   - name: Get first db pass
-    shell: 
+    shell:
       cmd: cat .mysql_secret | tail -n 1
     register: secret
+    when: check_my.stat.exists==False
  
-  - debug: 
-      var: secret 
-  
-  - name: Set mysql root password
+  - name: Reset tmp password without .my.cnf
+    shell:
+      cmd: mysql -e "SET PASSWORD = PASSWORD('{{ mysql_root_password }}');" --connect-expired-password -uroot -p"{{ secret.stdout }}"
+    when: check_my.stat.exists==False
+ 
+  - name: Copy my.cnf
+    template:
+      src: .my.cnf.j2
+      dest: /root/.my.cnf
+      owner: root
+      mode: 0600
+      force: yes
+
+  - name: Create zabbix db 
+    mysql_db:
+      name: zabbix
+      encoding: utf8
+      state: present 
+      collation: utf8_bin
+      
+  - name: Create zabbix user
     mysql_user:
-      login_user: root
-      login_password: 
-      name: 'root' 
-      password: 'password'
-      state: present
+      name: zabbix
+      password: "{{ zabbix_mysql_password }}" 
+      priv: 'zabbix.*:ALL'
+
+#  - shell:
+#      cmd: cat /usr/local/share/zabbix52/server/database/mysql/{schema.sql,images.sql, data.sql}
+#    register: check_import
+
+#  - debug:
+#      var: check_import
+
+#  - shell: cat /usr/local/share/zabbix52/server/database/mysql/{schema.sql,images.sql,data.sql} | mysql -u zabbix -p"{{ zabbix_mysql_password }}" zabbix
+
+  - name: Import schema.sql to zabbix db
+    mysql_db:
+      login_user: zabbix
+      login_password: "{{ zabbix_mysql_password }}"
+      name: zabbix
+      target: /usr/local/share/zabbix52/server/database/mysql/schema.sql
+#      - /usr/local/share/zabbix52/server/database/mysql/schema.sql
+#      - /usr/local/share/zabbix52/server/database/mysql/images.sql
+#      - /usr/local/share/zabbix52/server/database/mysql/data.sql
+      state: import
+      force: yes 
+  
+  - name: Import images.sql to zabbix db
+    mysql_db:
+      login_user: zabbix
+      login_password: "{{ zabbix_mysql_password }}"
+      name: zabbix
+      target: /usr/local/share/zabbix52/server/database/mysql/images.sql
+      state: import
+      force: yes
+
+  - name: Import data.sql to zabbix db
+    mysql_db:
+      login_user: zabbix
+      login_password: "{{ zabbix_mysql_password }}"
+      name: zabbix
+      target: /usr/local/share/zabbix52/server/database/mysql/data.sql 
+      state: import
+      force: yes
+
+
 
