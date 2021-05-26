@@ -20,12 +20,8 @@
       name: "{{ item }}"
       enabled: yes
       state: started
-    with_items: 
-      - "php-fpm"
-      - "nginx"
-      - "mysql-server"
-#     - "zabbix_server"
-#     - "zabbix_agentd"
+    loop: 
+    - mysql-server
 
   - name: Check my.cnf
     stat:
@@ -60,35 +56,61 @@
 
   - name: Create zabbix db 
     mysql_db:
-      name: zabbix
+      name: "{{ zabbix_database_name }}"
       encoding: utf8
       state: present 
       collation: utf8_bin
       
-  - name: Create zabbix user
+  - name: Create or change pass zabbix user
     mysql_user:
-      name: zabbix
-      password: "{{ zabbix_mysql_password }}" 
-      priv: 'zabbix.*:ALL'
+      name: "{{ zabbix_database_user }}"
+      password: "{{ zabbix_database_password }}" 
+      priv: "{{ zabbix_database_name }}.*:ALL"
 
-#  - shell:
-#      cmd: cat /usr/local/share/zabbix52/server/database/mysql/{schema.sql,images.sql, data.sql}
-#    register: check_import
-
-#  - debug:
-#      var: check_import
-
-#  - shell: cat /usr/local/share/zabbix52/server/database/mysql/{schema.sql,images.sql,data.sql} | mysql -u zabbix -p"{{ zabbix_mysql_password }}" zabbix
-
-  - name: Import schema.sql to zabbix db
+  - name: Import database information to zabbix db
     mysql_db:
-      login_user: zabbix
-      login_password: "{{ zabbix_mysql_password }}"
-      name: zabbix
+      login_user: "{{ zabbix_database_user }}" 
+      login_password: "{{ zabbix_database_password }}"
+      name: "{{ zabbix_database_name }}"
       target: /usr/local/share/zabbix52/server/database/mysql/{{ item }}
       state: import
       force: yes 
     loop:
-      - schema.sql
-      - images.sql
-      - data.sql
+    - schema.sql
+    - images.sql
+    - data.sql
+
+  - name: Copy configs
+    template:
+      src: templates/{{ item }}.j2
+      dest: /usr/local/etc/{{ item }}
+    loop:
+    - zabbix52/zabbix_server.conf
+    - zabbix52/zabbix_agentd.conf
+    - php.ini
+    - nginx/nginx.conf
+     
+  - name: Give www permissions on zabbix web
+    file:
+      dest: /usr/local/www/zabbix52
+      owner: www
+      group: www
+      recurse: yes 
+
+  - name: Restart(or start) and enable zabbix server and agent
+    service:
+      name: "{{ item }}"
+      enabled: yes
+      state: restarted
+    loop:  
+    - zabbix_server
+    - zabbix_agentd
+
+  - name: Reload services(php-fpm, nginx)
+    service:
+      name: "{{ item }}"
+      enabled: yes
+      state: reloaded
+    loop:
+    - php-fpm
+    - nginx
