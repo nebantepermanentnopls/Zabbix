@@ -15,13 +15,11 @@
       - py37-pymysql-0.10.1
       state: present
      
-  - name: Start and enable services
+  - name: Start and enable mysql
     service:
-      name: "{{ item }}"
+      name: mysql-server
       enabled: yes
       state: started
-    loop: 
-    - mysql-server
 
   - name: Check my.cnf
     stat:
