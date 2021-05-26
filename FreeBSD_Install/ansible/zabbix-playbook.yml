@@ -85,30 +85,10 @@
       login_user: zabbix
       login_password: "{{ zabbix_mysql_password }}"
       name: zabbix
-      target: /usr/local/share/zabbix52/server/database/mysql/schema.sql
-#      - /usr/local/share/zabbix52/server/database/mysql/schema.sql
-#      - /usr/local/share/zabbix52/server/database/mysql/images.sql
-#      - /usr/local/share/zabbix52/server/database/mysql/data.sql
+      target: /usr/local/share/zabbix52/server/database/mysql/{{ item }}
       state: import
       force: yes 
-  
-  - name: Import images.sql to zabbix db
-    mysql_db:
-      login_user: zabbix
-      login_password: "{{ zabbix_mysql_password }}"
-      name: zabbix
-      target: /usr/local/share/zabbix52/server/database/mysql/images.sql
-      state: import
-      force: yes
-
-  - name: Import data.sql to zabbix db
-    mysql_db:
-      login_user: zabbix
-      login_password: "{{ zabbix_mysql_password }}"
-      name: zabbix
-      target: /usr/local/share/zabbix52/server/database/mysql/data.sql 
-      state: import
-      force: yes
-
-
-
+    loop:
+      - schema.sql
+      - images.sql
+      - data.sql
