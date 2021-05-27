@@ -15,11 +15,13 @@
       - py37-pymysql-0.10.1
       state: present
      
-  - name: Start and enable mysql
+  - name: Start mysql services
     service:
-      name: mysql-server
+      name: "{{ item }}"
       enabled: yes
       state: started
+    loop: 
+    - mysql-server
 
   - name: Check my.cnf
     stat:
@@ -87,13 +89,37 @@
     - zabbix52/zabbix_agentd.conf
     - php.ini
     - nginx/nginx.conf
-     
+    - mysql/my.cnf
+
+  - name: Copy newsyslog.conf and crontab
+    template:
+      src: templates/{{ item }}.j2
+      dest: /etc/{{ item }}
+    loop:
+    - newsyslog.conf
+    - crontab
+
+  - name: Copy backup script
+    template:
+      src: templates/backup_script.sh
+      dest: /root/backup_script.sh
+  
   - name: Give www permissions on zabbix web
     file:
       dest: /usr/local/www/zabbix52
       owner: www
       group: www
       recurse: yes 
+
+  - name: Make dir for mysql logs and buckups
+    file:
+      dest: /var/{{ item }}
+      owner: mysql
+      group: mysql
+      state: directory
+    loop:
+      - log/mysql
+      - backups/zabbix 
 
   - name: Restart(or start) and enable zabbix server and agent
     service:
@@ -103,6 +129,7 @@
     loop:  
     - zabbix_server
     - zabbix_agentd
+    - mysql-server
 
   - name: Reload services(php-fpm, nginx)
     service:
@@ -112,3 +139,7 @@
     loop:
     - php-fpm
     - nginx
+
+  - name: Start newsyslog
+    shell:
+      cmd: newsyslog

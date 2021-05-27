@@ -8,3 +8,7 @@ zabbix_database_user         : zabbix                # db username for zabbix
 zabbix_database_password     : p@ssw0rd              # password for zabbix db
 zabbix_web_port              : 3000                  # port for zabbix web
 php_date_time                : Europe/Moscow         # date_time parametr for php
+max_log_file_size            : 1 		     # max size in KB
+max_log_files_num            : 5                     # number of log files for rotation
+cron_backup_timing           : '*  *  *  *  *'         # backup timing in cron syntax
+
