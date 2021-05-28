@@ -17,11 +17,9 @@
      
   - name: Start mysql services
     service:
-      name: "{{ item }}"
+      name: mysql-server 
       enabled: yes
       state: started
-    loop: 
-    - mysql-server
 
   - name: Check my.cnf
     stat:
@@ -60,41 +58,59 @@
       encoding: utf8
       state: present 
       collation: utf8_bin
-      
+    notify:
+    - Import database information to zabbix db     
+   
   - name: Create or change pass zabbix user
     mysql_user:
       name: "{{ zabbix_database_user }}"
       password: "{{ zabbix_database_password }}" 
       priv: "{{ zabbix_database_name }}.*:ALL"
 
-  - name: Import database information to zabbix db
-    mysql_db:
-      login_user: "{{ zabbix_database_user }}" 
-      login_password: "{{ zabbix_database_password }}"
-      name: "{{ zabbix_database_name }}"
-      target: /usr/local/share/zabbix52/server/database/mysql/{{ item }}
-      state: import
-      force: yes 
-    loop:
-    - schema.sql
-    - images.sql
-    - data.sql
-
-  - name: Copy configs
+  - name: Copy zabbix_server.conf
     template:
-      src: templates/{{ item }}.j2
-      dest: /usr/local/etc/{{ item }}
-    loop:
-    - zabbix52/zabbix_server.conf
-    - zabbix52/zabbix_agentd.conf
-    - php.ini
-    - nginx/nginx.conf
-    - mysql/my.cnf
+      src: templates/zabbix52/zabbix_server.conf.j2
+      dest: /usr/local/etc/zabbix52/zabbix_server.conf
+    notify:
+    - Restart zabbix_server
+
+  - name: Copy zabbix.conf.php 
+    template:
+      src: templates/zabbix.conf.php.j2
+      dest: /usr/local/www/zabbix52/conf/zabbix.conf.php
+
+  - name: Copy zabbix_agentd.conf
+    template:
+      src: templates/zabbix52/zabbix_agentd.conf.j2
+      dest: /usr/local/etc/zabbix52/zabbix_agentd.conf
+    notify:
+    - Restart zabbix_agentd
+
+  - name: Copy php.ini
+    template:
+      src: templates/php.ini.j2
+      dest: /usr/local/etc/php.ini
+    notify:
+    - Reload php-fpm 
+
+  - name: Copy nginx.conf
+    template:
+      src: templates/nginx/nginx.conf.j2
+      dest: /usr/local/etc/nginx/nginx.conf
+    notify:
+    - Reload nginx
+ 
+  - name: Copy my.cnf
+    template:
+      src: templates/mysql/my.cnf.j2
+      dest: /usr/local/etc/mysql/my.cnf
+    notify:
+    - Restart mysql-server
 
   - name: Copy newsyslog.conf
     template:
-      src: templates/newsyslog.conf.j2
-      dest: /etc/newsyslog.conf
+      src: templates/zabbix_logs.conf.j2
+      dest: /usr/local/etc/newsyslog.conf.d/zabbix_logs.conf
 
   - name: Copy backup script
     template:
@@ -106,7 +122,13 @@
     cron:
       name: "zabbix backup creator"
       job: "/root/backup_script.sh"  
-
+      minute: "*"
+      hour: "*"
+      day: "*"
+      month: "*"
+      weekday: "*"
+      
+  
   - name: Give www permissions on zabbix web
     file:
       dest: /usr/local/www/zabbix52
@@ -124,25 +146,48 @@
       - log/mysql
       - backups/zabbix 
 
-  - name: Restart(or start) and enable zabbix server and agent
+
+  handlers:
+  
+  - name: Import database information to zabbix db
+    mysql_db:
+      login_user: "{{ zabbix_database_user }}"
+      login_password: "{{ zabbix_database_password }}"
+      name: "{{ zabbix_database_name }}"
+      target: /usr/local/share/zabbix52/server/database/mysql/{{ item }}
+      state: import
+      force: yes
+    loop:
+    - schema.sql
+    - images.sql
+    - data.sql
+
+  - name: Restart zabbix_server
     service:
-      name: "{{ item }}"
+      name: zabbix_server
+      enabled: yes
+      state: restarted  
+
+  - name: Restart zabbix_agentd
+    service:
+      name: zabbix_agentd
       enabled: yes
       state: restarted
-    loop:  
-    - zabbix_server
-    - zabbix_agentd
-    - mysql-server
 
-  - name: Reload services(php-fpm, nginx)
+  - name: Restart mysql-server
     service:
-      name: "{{ item }}"
+      name: mysql-server
+      enabled: yes
+      state: restarted
+
+  - name: Reload php-fpm
+    service:
+      name: php-fpm
+      enabled: yes
+      state: reloaded 
+
+  - name: Reload nginx
+    service:
+      name: nginx
       enabled: yes
       state: reloaded
-    loop:
-    - php-fpm
-    - nginx
-
-  - name: Start newsyslog
-    shell:
-      cmd: newsyslog

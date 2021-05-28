@@ -1,4 +1,5 @@
 [zabbix-servers]
 zabbix1 ansible_host=172.20.10.2 mysql_root_password=root1p@ssw0rd 
 zabbix2 ansible_host=172.20.10.4 mysql_root_password=root2p@ssw0rd 
-zabbix3 ansible_host=172.20.10.6 mysql_root_password=roo3p@ssw0rd
+zabbix3 ansible_host=172.20.10.7 mysql_root_password=roo3p@ssw0rd
+zabbix4 ansible_host=172.20.10.3 mysql_root_password=roo3p@ssw0rd

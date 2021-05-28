@@ -32,5 +32,12 @@
 /var/log/weekly.log			640  5	   *	$W6D0 JN
 /var/log/daemon.log			644  5	   1000	@0101T JC
 
+/var/log/nginx/*.log			644  {{ max_log_files_num }}    {{ max_log_file_size }}    *     GJ    /var/run/nginx.pid   30 
+/var/log/php-fpm.log                    644  {{ max_log_files_num }}    {{ max_log_file_size }}    *     GJ    /var/run/php-fpm.pid 30
+
+/var/log/mysql/error.log   mysql:mysql	644  {{ max_log_files_num }}    {{ max_log_file_size }}    *     GJ    /var/db/mysql/Learn-BSD-2.pid
+/var/log/mysql/general.log mysql:mysql  644  {{ max_log_files_num }}    {{ max_log_file_size }}    *     GJ    /var/db/mysql/Learn-BSD-2.pid
+/var/log/mysql/slow.log    mysql:mysql  644  {{ max_log_files_num }}    {{ max_log_file_size }}    *     GJ    /var/db/mysql/Learn-BSD-2.pid
+
 <include> /etc/newsyslog.conf.d/[!.]*.conf
 <include> /usr/local/etc/newsyslog.conf.d/[!.]*.conf
