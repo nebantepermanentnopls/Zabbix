@@ -91,19 +91,22 @@
     - nginx/nginx.conf
     - mysql/my.cnf
 
-  - name: Copy newsyslog.conf and crontab
+  - name: Copy newsyslog.conf
     template:
-      src: templates/{{ item }}.j2
-      dest: /etc/{{ item }}
-    loop:
-    - newsyslog.conf
-    - crontab
+      src: templates/newsyslog.conf.j2
+      dest: /etc/newsyslog.conf
 
   - name: Copy backup script
     template:
       src: templates/backup_script.sh
       dest: /root/backup_script.sh
-  
+      mode: 500
+
+  - name: Update crontab file
+    cron:
+      name: "zabbix backup creator"
+      job: "/root/backup_script.sh"  
+
   - name: Give www permissions on zabbix web
     file:
       dest: /usr/local/www/zabbix52

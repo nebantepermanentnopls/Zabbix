@@ -12,7 +12,6 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 #
 # Rotate log files every hour, if necessary.
 0	*	*	*	*	root	newsyslog
-{{ cron_backup_timing  }}       root    /root/backup_script.sh
 
 #
 # Perform daily/weekly/monthly maintenance.
