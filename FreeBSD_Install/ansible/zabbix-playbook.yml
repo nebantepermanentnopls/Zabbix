@@ -127,7 +127,6 @@
       day: "*"
       month: "*"
       weekday: "*"
-      
   
   - name: Give www permissions on zabbix web
     file:
@@ -146,9 +145,6 @@
       - log/mysql
       - backups/zabbix 
 
-
-  handlers:
-  
   - name: Import database information to zabbix db
     mysql_db:
       login_user: "{{ zabbix_database_user }}"
@@ -162,6 +158,8 @@
     - images.sql
     - data.sql
 
+  handlers:
+  
   - name: Restart zabbix_server
     service:
       name: zabbix_server
