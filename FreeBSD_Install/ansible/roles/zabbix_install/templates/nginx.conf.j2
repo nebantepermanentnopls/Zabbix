@@ -1,0 +1,38 @@
+user  www;
+worker_processes  1;
+error_log /var/log/nginx/error.log info;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    access_log /var/log/nginx/access.log;
+
+    sendfile        on;
+    keepalive_timeout  65;
+
+    server {
+        listen      {{ zabbix_web_port }};
+        server_name {{ ansible_host }};
+
+        root /usr/local/www/zabbix52;
+        index index.php index.html;
+
+        location / {
+                root   /usr/local/www/zabbix52;
+                index  index.php index.html;
+        }
+
+        location ~ \.php$ {
+                fastcgi_pass 127.0.0.1:9000;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                try_files $uri =404;
+                include fastcgi_params;
+        }
+    }
+}

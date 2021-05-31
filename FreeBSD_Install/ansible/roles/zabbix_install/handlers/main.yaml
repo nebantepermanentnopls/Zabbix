@@ -1,0 +1,42 @@
+- name: Import database information to zabbix db
+  mysql_db:
+    login_user: "{{ zabbix_database_user }}"
+    login_password: "{{ zabbix_database_password }}"
+    name: "{{ zabbix_database_name }}"
+    target: /usr/local/share/zabbix52/server/database/mysql/{{ item }}
+    state: import
+    force: yes
+  loop:
+  - schema.sql
+  - images.sql
+  - data.sql
+
+- name: Restart zabbix_server
+  service:
+    name: zabbix_server
+    enabled: yes
+    state: restarted
+
+- name: Restart zabbix_agentd
+  service:
+    name: zabbix_agentd
+    enabled: yes
+    state: restarted
+
+- name: Restart mysql-server
+  service:
+    name: mysql-server
+    enabled: yes
+    state: restarted
+
+- name: Reload php-fpm
+  service:
+    name: php-fpm
+    enabled: yes
+    state: reloaded
+
+- name: Reload nginx
+  service:
+    name: nginx
+    enabled: yes
+    state: reloaded

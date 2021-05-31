@@ -1,0 +1,141 @@
+- name: Install packages
+  pkgng:
+    name:
+    - nginx-1.18.0_49,2
+    - mysql57-server-5.7.33
+    - zabbix52-server-5.2.5
+    - zabbix52-frontend-5.2.5
+    - zabbix52-agent-5.2.5
+    - py37-pymysql-0.10.1
+    state: present
+
+- name: Start mysql services
+  service:
+    name: mysql-server
+    enabled: yes
+    state: started
+
+- name: Check my.cnf
+  stat:
+    path: /root/.my.cnf
+  register: check_my
+
+- name: Reset root password with .my.cnf
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    config_file: ~/.my.cnf
+  when: check_my.stat.exists==True
+
+- name: Get first db pass
+  shell:
+    cmd: cat .mysql_secret | tail -n 1
+  register: secret
+  when: check_my.stat.exists==False
+
+- name: Reset tmp password without .my.cnf
+  shell:
+    cmd: mysql -e "SET PASSWORD = PASSWORD('{{ mysql_root_password }}');" --connect-expired-password -uroot -p"{{ secret.stdout }}"
+  when: check_my.stat.exists==False
+
+- name: Copy my.cnf
+  template:
+    src: .my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    mode: 0600
+    force: yes
+
+- name: Create zabbix db
+  mysql_db:
+    name: "{{ zabbix_database_name }}"
+    encoding: utf8
+    state: present
+    collation: utf8_bin
+  notify:
+  - Import database information to zabbix db
+
+- name: Create or change pass zabbix user
+  mysql_user:
+    name: "{{ zabbix_database_user }}"
+    password: "{{ zabbix_database_password }}"
+    priv: "{{ zabbix_database_name }}.*:ALL"
+
+- name: Copy zabbix_server.conf
+  template:
+    src: zabbix_server.conf.j2
+    dest: /usr/local/etc/zabbix52/zabbix_server.conf
+  notify:
+  - Restart zabbix_server
+
+- name: Copy zabbix.conf.php
+  template:
+    src: zabbix.conf.php.j2
+    dest: /usr/local/www/zabbix52/conf/zabbix.conf.php
+
+- name: Copy zabbix_agentd.conf
+  template:
+    src: zabbix_agentd.conf.j2
+    dest: /usr/local/etc/zabbix52/zabbix_agentd.conf
+  notify:
+  - Restart zabbix_agentd
+
+- name: Copy php.ini
+  template:
+    src: php.ini.j2
+    dest: /usr/local/etc/php.ini
+  notify:
+  - Reload php-fpm
+
+- name: Copy nginx.conf
+  template:
+    src: nginx.conf.j2
+    dest: /usr/local/etc/nginx/nginx.conf
+  notify:
+  - Reload nginx
+
+- name: Copy my.cnf
+  template:
+    src: my.cnf.j2
+    dest: /usr/local/etc/mysql/my.cnf
+  notify:
+  - Restart mysql-server
+
+- name: Copy newsyslog.conf
+  template:
+    src: zabbix_logs.conf.j2
+    dest: /usr/local/etc/newsyslog.conf.d/zabbix_logs.conf
+
+- name: Copy backup script
+  copy:
+    src: backup_script.sh
+    dest: /root/backup_script.sh
+    mode: 500
+
+- name: Update crontab file
+  cron:
+    name: "zabbix backup creator"
+    job: "/root/backup_script.sh"
+    minute: "*"
+    hour: "*"
+    day: "*"
+    month: "*"
+    weekday: "*"
+
+
+- name: Give www permissions on zabbix web
+  file:
+    dest: /usr/local/www/zabbix52
+    owner: www
+    group: www
+    recurse: yes
+
+- name: Make dir for mysql logs and buckups
+  file:
+    dest: /var/{{ item }}
+    owner: mysql
+    group: mysql
+    state: directory
+  loop:
+  - log/mysql
+  - backups/zabbix
