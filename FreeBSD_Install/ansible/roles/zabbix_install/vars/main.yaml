@@ -1,0 +1,10 @@
+---
+zabbix_database_host         : localhost             #
+zabbix_database_name         : zabbix                # name db for zabbix
+zabbix_database_user         : zabbix                # db username for zabbix
+zabbix_database_password     : p@ssw0rdd             # password for zabbix db
+zabbix_web_port              : 3000                 # port for zabbix web
+php_date_time                : Europe/Moscow         # date_time parametr for php
+max_log_file_size            : 1                     # max size in KB
+max_log_files_num            : 5                     # number of log files for rotation
+
