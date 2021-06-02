@@ -1,0 +1,11 @@
+ipfw -q -f flush
+
+cmd="ipfw -q add"
+
+$cmd 00010 allow all from any to any via lo0
+
+$cmd 00015 allow all from me to any out setup keep-state
+
+$cmd 00020 allow tcp from 172.20.10.0/24 to me 22 in via em0 setup keep-state
+
+$cmd 00030 allow tcp from 172.20.10.0/24 to me 3000 in via em0 setup keep-state 

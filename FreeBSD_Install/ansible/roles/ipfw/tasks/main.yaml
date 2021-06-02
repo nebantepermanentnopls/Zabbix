@@ -1,0 +1,18 @@
+---
+
+- name: Enabled ipfw
+  service:
+    name: ipfw
+    enabled: yes
+
+- name: Past firewall script path
+  lineinfile:
+    path: /etc/rc.conf
+    regexp: "^firewall_script="
+    line: firewall_script=/etc/ipfw.rules
+
+- name: Copy ipfw.rules
+  template:
+    src: ipfw.rules.j2
+    dest: /etc/ipfw.rules
+  notify: Restart ipfw 
