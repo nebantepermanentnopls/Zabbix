@@ -1,3 +1,7 @@
+- name: FreeBSD update
+  shell:
+    cmd: freebsd-update --not-running-from-cron fetch install
+
 - name: Install packages
   pkgng:
     name:

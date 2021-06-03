@@ -1,5 +1,4 @@
 ---
-
 - name: Restart ipfw
   service:
     name: ipfw

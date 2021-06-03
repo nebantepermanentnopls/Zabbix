@@ -2,5 +2,4 @@
 - name: Install Zabbix-Server
   hosts: zabbix-servers
   roles:
-  - ipfw
-#  - zabbix_install 
+  - zabbix_install 

@@ -1,5 +1,4 @@
 ---
-
 - name: Enabled ipfw
   service:
     name: ipfw
@@ -11,8 +10,15 @@
     regexp: "^firewall_script="
     line: firewall_script=/etc/ipfw.rules
 
+- name: Set net.inet.ip.fw.dyn_keep_states=1
+  sysctl:
+    name: net.inet.ip.fw.dyn_keep_states
+    value: '1'
+    
 - name: Copy ipfw.rules
   template:
     src: ipfw.rules.j2
     dest: /etc/ipfw.rules
-  notify: Restart ipfw 
+  notify: 
+  - Restart ipfw 
+
